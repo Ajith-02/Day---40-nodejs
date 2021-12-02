@@ -1,8 +1,18 @@
 
-const express = require("express");
+//const express = require("express"); // this is for "type": "common" 
+import express from "express"; // this is for "type": "module" 
+import { MongoClient } from "mongodb";
 const app = express();
 
 const PORT = 9000;
+
+//middleware
+app.use(express.json())
+  //express.json() is a inbuilt middleware
+  // which transforms the body data passed in json
+  // it converts every request in the app
+
+/*
 const movies =[
     
   {
@@ -74,6 +84,16 @@ const movies =[
     
   }
 ];
+*/
+const MONGO_URL = "mongodb://localhost";
+async function createConnection(){
+  const client = new MongoClient(MONGO_URL);
+  await client.connect(); //promise
+  console.log("Mongodb Connected");
+  return client;
+}
+const client = await createConnection()
+
 app.get("/", (request, response)=>{
      response.send("Hello All");
  });
@@ -81,12 +101,17 @@ app.get("/", (request, response)=>{
 /*
  app.get("/movies", (request, response)=>{
    response.send(movies)
-});
+}); 
 */
-app.get("/movies/:id", (request, response)=>{
+app.get("/movies/:id", async(request, response)=>{
   console.log(request.params);
   const { id } = request.params;
-  const movie = movies.find((mv)=> mv.id === id);
+  // db.movies.findOnw({id: "102"})
+  const movie = await client
+     .db("day40")
+     .collection("movies")
+     .findOne({ id: id })
+  //const movie = movies.find((mv)=> mv.id === id);
   console.log(movie);
   movie
   ? response.send(movie)
@@ -115,20 +140,40 @@ app.get("/movies", (request, response)=>{
 //movies?language=tamil -> only tamil movies
 //movies?language=english&rating=8 -> filter by language and rating
 //movies?rating=8 -> filter by movies and rating
+app.post("/movies", async (request, response)=>{
+  const data = request.body;
+  //console.log(data);
+  // create movies - db.movies.insertMany(data)
+  const result = await client
+     .db("day40")
+     .collection("movies")
+     .insertMany(data);
+  response.send(data);
+});
 
-app.get("/movies", (request, response)=>{
+app.get("/movies", async (request, response)=>{
   //request -> query params
   console.log(request.query);
-  const { language, rating } = request.query;
-  console.log(language, rating);
+  const filter = request.query;
+  console.log(filter);
+  if(filter.rating){
+    filter.rating = parseInt(filter.rating);
+  }
+  //const { language, rating } = request.query;
+  /*console.log(language, rating);
   let filterMovies = movies;
   if(language){
     filterMovies = filterMovies.filter((mv)=> mv.language === language);
   }
   if(rating){
-    filterMovies = filterMovies.filter((mv)=> mv.rating === +rating);
-  }
-    response.send(filterMovies);
+    filterMovies = filterMovies.filter((mv)=> mv.rating === +rating);  
+  }*/
+
+  //db.movies.find({})
+  const filterMovies = await client.db("day40").collection("movies").find({}).toArray(); // find always reurns in cursor
+  console.log(filterMovies); 
+  // Cursor is a pagination 1 2 3 4 5 6 Next
+  response.send(filterMovies);
   
 });
 

@@ -2,6 +2,11 @@
 //const express = require("express"); // this is for "type": "common" 
 import express from "express"; // this is for "type": "module" 
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+
+dotenv.config(); // all keys it will put in process.env
+
+console.log(process.env);
 const app = express();
 
 const PORT = 9000;
@@ -85,7 +90,14 @@ const movies =[
   }
 ];
 */
-const MONGO_URL = "mongodb://localhost";
+// One & only line change to make it 
+
+const MONGO_URL = process.env.MONGO_URL;
+//const MONGO_URL = "mongodb://localhost";
+//const MONGO_URL = "mongodb+srv://Ajith:welcome123@cluster0.rtsnr.mongodb.net";
+//mongodb+srv://Ajith:<password>@cluster0.rtsnr.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
+
 async function createConnection(){
   const client = new MongoClient(MONGO_URL);
   await client.connect(); //promise
@@ -107,10 +119,7 @@ app.get("/movies/:id", async(request, response)=>{
   console.log(request.params);
   const { id } = request.params;
   // db.movies.findOnw({id: "102"})
-  const movie = await client
-     .db("day40")
-     .collection("movies")
-     .findOne({ id: id })
+  const movie = await getMovieById(id);
   //const movie = movies.find((mv)=> mv.id === id);
   console.log(movie);
   movie
@@ -118,6 +127,27 @@ app.get("/movies/:id", async(request, response)=>{
   : response.status(404).send({message: "No matching movie"}); 
 });
 
+app.delete("/movies/:id", async(request, response)=>{
+  console.log(request.params);
+  const { id } = request.params;
+  const result = await deleteMovieById(id);
+  
+  result.deletedCount > 0
+  ? response.send(result)
+  : response.status(404).send({message: "No matching movie"}); 
+});
+
+app.put("/movies/:id", async(request, response)=>{
+  console.log(request.params);
+  const { id } = request.params;
+  const data = request.body; //we will update in body
+  const result = await updateMovieById(id, data);
+  //const movie = movies.find((mv)=> mv.id === id);
+  response.send(result);
+  /*movie
+  ? response.send(result)
+  : response.status(404).send({message: "No matching movie"}); */
+});
 //movies -> all the movies
 //movies?language=english -> only english movies
 //movies?language=tamil -> only tamil movies
@@ -144,10 +174,7 @@ app.post("/movies", async (request, response)=>{
   const data = request.body;
   //console.log(data);
   // create movies - db.movies.insertMany(data)
-  const result = await client
-     .db("day40")
-     .collection("movies")
-     .insertMany(data);
+  const result = await createMovies(data);
   response.send(data);
 });
 
@@ -157,7 +184,7 @@ app.get("/movies", async (request, response)=>{
   const filter = request.query;
   console.log(filter);
   if(filter.rating){
-    filter.rating = parseInt(filter.rating);
+    filter.rating = +filter.rating;
   }
   //const { language, rating } = request.query;
   /*console.log(language, rating);
@@ -170,7 +197,7 @@ app.get("/movies", async (request, response)=>{
   }*/
 
   //db.movies.find({})
-  const filterMovies = await client.db("day40").collection("movies").find({}).toArray(); // find always reurns in cursor
+  const filterMovies = await getMovies(); // find always reurns in cursor
   console.log(filterMovies); 
   // Cursor is a pagination 1 2 3 4 5 6 Next
   response.send(filterMovies);
@@ -180,6 +207,40 @@ app.get("/movies", async (request, response)=>{
  app.listen(PORT, ()=> console.log("App is started", PORT));
 
 
+
+
+
+async function getMovieById(id) {
+  return await client
+    .db("day40")
+    .collection("movies")
+    .findOne({ id: id });
+}
+
+function createMovies(data) {
+  return client
+    .db("day40")
+    .collection("movies")
+    .insertMany(data);
+}
+
+function updateMovieById(id, data) {
+  return client
+    .db("day40")
+    .collection("movies")
+    .updateOne({ id: id }, { $set: data });
+}
+
+function deleteMovieById(id) {
+  return client
+    .db("day40")
+    .collection("movies")
+    .deleteOne({ id: id });
+}
+
+async function getMovies() {
+  return await client.db("day40").collection("movies").find({}).toArray();
+}
  // Other ways to find using url
  // https://www.youtube.com/results?search_query=maanaadu+trailer
  // things after "?" is query params(parameters)

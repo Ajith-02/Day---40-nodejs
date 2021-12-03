@@ -1,29 +1,37 @@
 import { client } from "./index.js";
 
-export async function getMovieById(id) {
+ async function getMovieById(id) {
   return await client
     .db("day40")
     .collection("movies")
     .findOne({ id: id });
 }
-export function createMovies(data) {
+ function createMovies(data) {
   return client
     .db("day40")
     .collection("movies")
     .insertMany(data);
 }
-export function updateMovieById(id, data) {
+ function updateMovieById(id, data) {
   return client
     .db("day40")
     .collection("movies")
     .updateOne({ id: id }, { $set: data });
 }
-export function deleteMovieById(id) {
+ function deleteMovieById(id) {
   return client
     .db("day40")
     .collection("movies")
     .deleteOne({ id: id });
 }
-export async function getMovies() {
+ async function getMovies() {
   return await client.db("day40").collection("movies").find({}).toArray();
+}
+
+export { 
+  getMovieById, 
+  deleteMovieById, 
+  updateMovieById, 
+  createMovies, 
+  getMovies 
 }

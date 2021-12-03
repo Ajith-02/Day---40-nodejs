@@ -3,6 +3,7 @@
 import express from "express"; // this is for "type": "module" 
 import { MongoClient } from "mongodb";
 import dotenv from "dotenv";
+import { getMovieById, deleteMovieById, updateMovieById, createMovies, getMovies } from "./helper.js";
 
 dotenv.config(); // all keys it will put in process.env
 
@@ -93,9 +94,7 @@ const movies =[
 // One & only line change to make it 
 
 const MONGO_URL = process.env.MONGO_URL;
-//const MONGO_URL = "mongodb://localhost";
-//const MONGO_URL = "mongodb+srv://Ajith:welcome123@cluster0.rtsnr.mongodb.net";
-//mongodb+srv://Ajith:<password>@cluster0.rtsnr.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
 
 
 async function createConnection(){
@@ -104,7 +103,7 @@ async function createConnection(){
   console.log("Mongodb Connected");
   return client;
 }
-const client = await createConnection()
+export const client = await createConnection()
 
 app.get("/", (request, response)=>{
      response.send("Hello All");
@@ -210,37 +209,3 @@ app.get("/movies", async (request, response)=>{
 
 
 
-async function getMovieById(id) {
-  return await client
-    .db("day40")
-    .collection("movies")
-    .findOne({ id: id });
-}
-
-function createMovies(data) {
-  return client
-    .db("day40")
-    .collection("movies")
-    .insertMany(data);
-}
-
-function updateMovieById(id, data) {
-  return client
-    .db("day40")
-    .collection("movies")
-    .updateOne({ id: id }, { $set: data });
-}
-
-function deleteMovieById(id) {
-  return client
-    .db("day40")
-    .collection("movies")
-    .deleteOne({ id: id });
-}
-
-async function getMovies() {
-  return await client.db("day40").collection("movies").find({}).toArray();
-}
- // Other ways to find using url
- // https://www.youtube.com/results?search_query=maanaadu+trailer
- // things after "?" is query params(parameters)
